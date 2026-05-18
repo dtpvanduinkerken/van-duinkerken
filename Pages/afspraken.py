@@ -1,19 +1,54 @@
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 
-st.set_page_config(layout="wide")
+from datetime import datetime
 
-with st.sidebar:
-    st.markdown("## Dashboard")
-
-    st.page_link("Home.py", label="Home", icon="🏠")
-    st.page_link("pages/Social_Media.py", label="Social Media", icon="📱")
-    st.page_link("pages/Nieuwsbrief.py", label="Nieuwsbrieven", icon="✉️")
-    st.page_link("pages/Members.py", label="Members", icon="👥")
+# =====================================================
+# PAGE CONFIG
+# =====================================================
 
 st.set_page_config(
     page_title="Afspraken",
     layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# =====================================================
+# SIDEBAR
+# =====================================================
+
+with st.sidebar:
+
+    st.markdown("## Dashboard")
+
+    st.page_link(
+        "main.py",
+        label="Home",
+        icon="🏠"
+    )
+
+    st.page_link(
+        "pages/Social_Media.py",
+        label="Social Media",
+        icon="📱"
+    )
+
+    st.page_link(
+        "pages/Nieuwsbrief.py",
+        label="Nieuwsbrieven",
+        icon="✉️"
+    )
+
+    st.page_link(
+        "pages/Members.py",
+        label="Members",
+        icon="👥"
+    )
+
+# =====================================================
+# STYLING
+# =====================================================
 
 STYLE = """
 <link rel="stylesheet" href="https://use.typekit.net/nap5xax.css">
@@ -32,6 +67,26 @@ html, body, [data-testid="stAppViewContainer"]{
     padding-bottom:40px;
     max-width:1700px;
 }
+
+/* SIDEBAR */
+
+section[data-testid="stSidebar"]{
+    background:#084422;
+    border-right:none;
+}
+
+section[data-testid="stSidebar"] *{
+    color:white !important;
+}
+
+/* MENU */
+
+#MainMenu,
+footer{
+    visibility:hidden;
+}
+
+/* TITLES */
 
 .dashboard-title{
     font-size:58px;
@@ -75,6 +130,15 @@ tbody tr:hover{
     background-color:#eef5ea;
 }
 
+/* CHARTS */
+
+div[data-testid="stPlotlyChart"]{
+    background:white;
+    padding:15px;
+    border-radius:24px;
+    box-shadow:0 10px 25px rgba(8,68,34,0.05);
+}
+
 </style>
 """
 
@@ -84,12 +148,17 @@ st.markdown(STYLE, unsafe_allow_html=True)
 # HEADER
 # =====================================================
 
-col1, col2, col3 = st.columns([2,2,1])
+col1, col2, col3 = st.columns([2, 2, 1])
 
 with col1:
-    st.title("Afspraken")
+
+    st.markdown(
+        '<div class="dashboard-title">Afspraken</div>',
+        unsafe_allow_html=True
+    )
 
 with col3:
+
     st.text(
         f"{datetime.now().strftime('%d %B %Y')}"
     )
@@ -113,13 +182,20 @@ OPEN_SHEET_URL = (
 def load_data():
 
     try:
-        df = pd.read_csv(OPEN_SHEET_URL)
+
+        df = pd.read_csv(
+            OPEN_SHEET_URL
+        )
 
     except Exception as exc:
-        st.error(f"Kan data niet laden: {exc}")
+
+        st.error(
+            f"Kan data niet laden: {exc}"
+        )
+
         return pd.DataFrame()
 
-    # ===== KOLOMMEN OPSCHONEN =====
+    # ===== COLUMNS =====
 
     df.columns = (
         df.columns
@@ -128,29 +204,46 @@ def load_data():
 
     # ===== DATUM =====
 
-    df["Datum"] = pd.to_datetime(
-        df["Datum"],
-        dayfirst=True,
-        errors="coerce"
-    )
+    if "Datum" in df.columns:
+
+        df["Datum"] = pd.to_datetime(
+            df["Datum"],
+            dayfirst=True,
+            errors="coerce"
+        )
 
     # ===== ANNULERING =====
 
-    df["Is geannuleerd"] = (
-        df["Is geannuleerd"]
-        .astype(str)
-        .str.strip()
-        .str.lower()
-        .map({
-            "ja": True,
-            "nee": False
-        })
-        .fillna(False)
-    )
+    if "Is geannuleerd" in df.columns:
+
+        df["Is geannuleerd"] = (
+            df["Is geannuleerd"]
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .map({
+                "ja": True,
+                "nee": False
+            })
+            .fillna(False)
+        )
 
     return df
 
 df = load_data()
+
+# =====================================================
+# DEFAULT KPI VALUES
+# =====================================================
+
+total = 0
+canceled = 0
+cancel_rate = 0
+latest_week = 0
+growth = 0
+
+weekly = pd.DataFrame()
+df_active = pd.DataFrame()
 
 # =====================================================
 # KPI DATA
@@ -165,11 +258,14 @@ if not df.empty:
     )
 
     cancel_rate = (
-        round((canceled / total) * 100, 1)
+        round(
+            (canceled / total) * 100,
+            1
+        )
         if total else 0
     )
 
-    # ===== ALLEEN ACTIEVE AFSPRAKEN =====
+    # ===== ACTIEVE AFSPRAKEN =====
 
     df_active = (
         df[df["Is geannuleerd"] == False]
@@ -177,11 +273,10 @@ if not df.empty:
     )
 
     df_active = (
-        df_active[df_active["Datum"].notna()]
+        df_active[
+            df_active["Datum"].notna()
+        ]
     )
-
-    latest_week = 0
-    growth = 0
 
     # =====================================================
     # WEEK DATA
@@ -217,7 +312,7 @@ if not df.empty:
             .round(1)
         )
 
-        # ===== HUIDIGE WEEK =====
+        # ===== CURRENT WEEK =====
 
         current_week_start = (
             pd.Timestamp.today().normalize()
@@ -256,27 +351,33 @@ if not df.empty:
 # KPI CARDS
 # =====================================================
 
+st.divider()
+
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
+
     st.metric(
         "Afspraken totaal",
         f"{total:,}".replace(",", ".")
     )
 
 with col2:
+
     st.metric(
         "Geannuleerd",
         f"{canceled:,}".replace(",", ".")
     )
 
 with col3:
+
     st.metric(
         "Annuleringsratio",
         f"{cancel_rate}%"
     )
 
 with col4:
+
     st.metric(
         "Laatste week",
         f"{latest_week:,}".replace(",", "."),
@@ -291,7 +392,7 @@ st.divider()
 
 st.subheader("Week overzicht")
 
-if not df_active.empty:
+if not weekly.empty:
 
     weekly_display = weekly.copy()
 
@@ -326,7 +427,12 @@ if not df_active.empty:
         showlegend=False,
         xaxis_title="",
         yaxis_title="Aantal afspraken",
-        margin=dict(t=30, l=20, r=20, b=20),
+        margin=dict(
+            t=30,
+            l=20,
+            r=20,
+            b=20
+        ),
     )
 
     fig_week.update_xaxes(
@@ -344,7 +450,7 @@ if not df_active.empty:
     )
 
 # =====================================================
-# AFDELINGEN DIAGRAM
+# AFDELINGEN
 # =====================================================
 
 st.divider()
@@ -352,8 +458,8 @@ st.divider()
 st.subheader("Afspraken per afdeling")
 
 if (
-    not df_active.empty and
-    "Dienst-categorie" in df_active.columns
+    not df_active.empty
+    and "Dienst-categorie" in df_active.columns
 ):
 
     afdeling_data = (
@@ -361,7 +467,10 @@ if (
         .groupby("Dienst-categorie")
         .size()
         .reset_index(name="Aantal")
-        .sort_values("Aantal", ascending=False)
+        .sort_values(
+            "Aantal",
+            ascending=False
+        )
     )
 
     fig_afdeling = px.pie(
@@ -385,7 +494,12 @@ if (
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
         showlegend=False,
-        margin=dict(t=30, l=20, r=20, b=20),
+        margin=dict(
+            t=30,
+            l=20,
+            r=20,
+            b=20
+        ),
     )
 
     st.plotly_chart(
