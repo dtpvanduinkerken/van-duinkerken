@@ -1,19 +1,54 @@
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 
-st.set_page_config(layout="wide")
+from datetime import datetime
 
-with st.sidebar:
-    st.markdown("## Dashboard")
-
-    st.page_link("Home.py", label="Home", icon="🏠")
-    st.page_link("pages/Social_Media.py", label="Social Media", icon="📱")
-    st.page_link("pages/Nieuwsbrief.py", label="Nieuwsbrieven", icon="✉️")
-    st.page_link("pages/Members.py", label="Members", icon="👥")
+# =====================================================
+# PAGE CONFIG
+# =====================================================
 
 st.set_page_config(
     page_title="Nieuwsbrief Dashboard",
     layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# =====================================================
+# SIDEBAR
+# =====================================================
+
+with st.sidebar:
+
+    st.markdown("## Dashboard")
+
+    st.page_link(
+        "main.py",
+        label="Home",
+        icon="🏠"
+    )
+
+    st.page_link(
+        "pages/Social_Media.py",
+        label="Social Media",
+        icon="📱"
+    )
+
+    st.page_link(
+        "pages/Nieuwsbrief.py",
+        label="Nieuwsbrieven",
+        icon="✉️"
+    )
+
+    st.page_link(
+        "pages/Members.py",
+        label="Members",
+        icon="👥"
+    )
+
+# =====================================================
+# STYLING
+# =====================================================
 
 STYLE = """
 <link rel="stylesheet" href="https://use.typekit.net/nap5xax.css">
@@ -33,27 +68,30 @@ html, body, [data-testid="stAppViewContainer"]{
     max-width:1700px;
 }
 
-/* HEADER */
+/* SIDEBAR */
 
-.dashboard-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding-bottom:25px;
-    border-bottom:1px solid #bdb7ab;
-    margin-bottom:25px;
+section[data-testid="stSidebar"]{
+    background:#084422;
+    border-right:none;
 }
+
+section[data-testid="stSidebar"] *{
+    color:white !important;
+}
+
+/* MENU */
+
+#MainMenu,
+footer{
+    visibility:hidden;
+}
+
+/* HEADER */
 
 .dashboard-title{
     font-size:58px;
     font-weight:700;
     color:#084422;
-}
-
-.dashboard-center{
-    font-size:28px;
-    font-weight:600;
-    color:#111111;
 }
 
 .dashboard-date{
@@ -62,15 +100,37 @@ html, body, [data-testid="stAppViewContainer"]{
     font-weight:600;
 }
 
-/* GRAPH BLOCK */
+/* KPI */
 
-.graph-card{
+[data-testid="metric-container"]{
     background:#ffffff;
-    border-radius:30px;
-    padding:30px;
+    border-radius:24px;
+    padding:22px;
     box-shadow:0 8px 25px rgba(0,0,0,0.04);
-    margin-top:35px;
+    border:none;
 }
+
+[data-testid="metric-container"] label{
+    color:#8a8a8a !important;
+    font-size:14px !important;
+}
+
+[data-testid="metric-container"] [data-testid="stMetricValue"]{
+    color:#084422;
+    font-size:34px;
+    font-weight:700;
+}
+
+/* GRAPH */
+
+div[data-testid="stPlotlyChart"]{
+    background:white;
+    padding:15px;
+    border-radius:24px;
+    box-shadow:0 10px 25px rgba(8,68,34,0.05);
+}
+
+/* FILTER */
 
 .stSelectbox label{
     display:none;
@@ -82,6 +142,8 @@ html, body, [data-testid="stAppViewContainer"]{
 
 </style>
 """
+
+st.markdown(STYLE, unsafe_allow_html=True)
 
 # =====================================================
 # DATA
@@ -104,17 +166,28 @@ NUMERIC_COLUMNS = [
     "unsubscribes",
 ]
 
+# =====================================================
+# LOAD DATA
+# =====================================================
+
 @st.cache_data(ttl=600)
 def load_data() -> pd.DataFrame:
 
     try:
-        df = pd.read_csv(OPEN_SHEET_URL)
+
+        df = pd.read_csv(
+            OPEN_SHEET_URL
+        )
 
     except Exception as exc:
-        st.error(f"Kan data niet laden: {exc}")
+
+        st.error(
+            f"Kan data niet laden: {exc}"
+        )
+
         return pd.DataFrame()
 
-    # ===== KOLOMNAMEN =====
+    # ===== CLEAN COLUMNS =====
 
     df.columns = (
         df.columns
@@ -124,7 +197,7 @@ def load_data() -> pd.DataFrame:
         .str.replace("-", "_", regex=False)
     )
 
-    # ===== NUMERIEKE KOLOMMEN =====
+    # ===== NUMERIC COLUMNS =====
 
     for col in NUMERIC_COLUMNS:
 
@@ -145,7 +218,7 @@ def load_data() -> pd.DataFrame:
                 errors="coerce"
             ).fillna(0)
 
-    # ===== DATUM =====
+    # ===== DATE =====
 
     if "date" in df.columns:
 
@@ -156,6 +229,9 @@ def load_data() -> pd.DataFrame:
 
     return df
 
+# =====================================================
+# HELPERS
+# =====================================================
 
 def format_number(value) -> str:
 
@@ -172,145 +248,220 @@ def format_rate(value) -> str:
 
     return f"{value:.1f}%".replace(".", ",")
 
+# =====================================================
+# HEADER
+# =====================================================
 
-def render_header() -> None:
+col1, col2, col3 = st.columns([2, 2, 1])
 
-    col1, col2, col3 = st.columns([2, 2, 1])
+with col1:
 
-    with col1:
-        st.title("Nieuwsbrief")
+    st.markdown(
+        '<div class="dashboard-title">Nieuwsbrief</div>',
+        unsafe_allow_html=True
+    )
 
-    with col3:
-        st.text(
-            f"{datetime.now().strftime('%d %B %Y')}"
+with col3:
+
+    st.markdown(
+        f'<div class="dashboard-date">{datetime.now().strftime("%d %B %Y")}</div>',
+        unsafe_allow_html=True
+    )
+
+# =====================================================
+# LOAD DATAFRAME
+# =====================================================
+
+df = load_data()
+
+if df.empty:
+
+    st.error("Geen data gevonden.")
+
+    st.stop()
+
+# =====================================================
+# FILTER
+# =====================================================
+
+campaigns = [ALL_CAMPAIGNS_LABEL]
+
+if "campaign" in df.columns:
+
+    campaign_order = (
+        df.dropna(subset=["campaign"])
+        .sort_values(
+            "date",
+            ascending=False
         )
-
-
-def get_campaign_filter(df: pd.DataFrame) -> pd.DataFrame:
-
-    campaigns = [ALL_CAMPAIGNS_LABEL]
-
-    if "campaign" in df.columns:
-
-        campaign_order = (
-            df.dropna(subset=["campaign"])
-            .sort_values("date", ascending=False)
-            .drop_duplicates(subset=["campaign"])
+        .drop_duplicates(
+            subset=["campaign"]
         )
-
-        campaigns.extend(
-            campaign_order["campaign"]
-            .astype(str)
-            .tolist()
-        )
-
-    selected_campaign = st.selectbox(
-        "Campagne",
-        campaigns
     )
 
-    if selected_campaign != ALL_CAMPAIGNS_LABEL:
-
-        return df[
-            df["campaign"] == selected_campaign
-        ]
-
-    return df
-
-
-def render_kpis(df: pd.DataFrame) -> None:
-
-    total_sent = int(
-        df.get("sent", pd.Series(0)).sum()
+    campaigns.extend(
+        campaign_order["campaign"]
+        .astype(str)
+        .tolist()
     )
 
-    total_opens = int(
-        df.get("opens", pd.Series(0)).sum()
+selected_campaign = st.selectbox(
+    "Campagne",
+    campaigns
+)
+
+if selected_campaign != ALL_CAMPAIGNS_LABEL:
+
+    filtered_df = df[
+        df["campaign"]
+        == selected_campaign
+    ]
+
+else:
+
+    filtered_df = df
+
+if filtered_df.empty:
+
+    st.warning(
+        "Geen data beschikbaar voor de geselecteerde campagne."
     )
 
-    total_clicks = int(
-        df.get("clicks", pd.Series(0)).sum()
+    st.stop()
+
+# =====================================================
+# KPI'S
+# =====================================================
+
+st.divider()
+
+total_sent = int(
+    filtered_df.get(
+        "sent",
+        pd.Series(0)
+    ).sum()
+)
+
+total_opens = int(
+    filtered_df.get(
+        "opens",
+        pd.Series(0)
+    ).sum()
+)
+
+total_clicks = int(
+    filtered_df.get(
+        "clicks",
+        pd.Series(0)
+    ).sum()
+)
+
+total_bounces = int(
+    filtered_df.get(
+        "bounces",
+        pd.Series(0)
+    ).sum()
+)
+
+total_unsubs = int(
+    filtered_df.get(
+        "unsubscribes",
+        pd.Series(0)
+    ).sum()
+)
+
+open_rate = (
+    round(
+        (total_opens / total_sent) * 100,
+        1
+    )
+    if total_sent else 0
+)
+
+click_rate = (
+    round(
+        (total_clicks / total_sent) * 100,
+        1
+    )
+    if total_sent else 0
+)
+
+bounce_rate = (
+    round(
+        (total_bounces / total_sent) * 100,
+        1
+    )
+    if total_sent else 0
+)
+
+click_to_open = (
+    round(
+        (total_clicks / total_opens) * 100,
+        1
+    )
+    if total_opens else 0
+)
+
+col1, col2, col3, col4, col5, col6 = st.columns(6)
+
+with col1:
+
+    st.metric(
+        "Verzonden mails",
+        format_number(total_sent)
     )
 
-    total_bounces = int(
-        df.get("bounces", pd.Series(0)).sum()
+with col2:
+
+    st.metric(
+        "Open rate",
+        format_rate(open_rate),
+        f"{format_number(total_opens)} geopend"
     )
 
-    total_unsubs = int(
-        df.get("unsubscribes", pd.Series(0)).sum()
+with col3:
+
+    st.metric(
+        "Click rate",
+        format_rate(click_rate),
+        f"{format_number(total_clicks)} geklikt"
     )
 
-    open_rate = (
-        round((total_opens / total_sent) * 100, 1)
-        if total_sent else 0
+with col4:
+
+    st.metric(
+        "Click-to-open",
+        format_rate(click_to_open)
     )
 
-    click_rate = (
-        round((total_clicks / total_sent) * 100, 1)
-        if total_sent else 0
+with col5:
+
+    st.metric(
+        "Bounce rate",
+        format_rate(bounce_rate),
+        f"{format_number(total_bounces)} bounced"
     )
 
-    bounce_rate = (
-        round((total_bounces / total_sent) * 100, 1)
-        if total_sent else 0
+with col6:
+
+    st.metric(
+        "Uitschrijvingen",
+        format_number(total_unsubs)
     )
 
-    click_to_open = (
-        round((total_clicks / total_opens) * 100, 1)
-        if total_opens else 0
-    )
+# =====================================================
+# CHART
+# =====================================================
 
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+st.divider()
 
-    with col1:
-        st.metric(
-            "Verzonden mails",
-            format_number(total_sent)
-        )
-
-    with col2:
-        st.metric(
-            "Open rate",
-            format_rate(open_rate),
-            f"{format_number(total_opens)} geopend"
-        )
-
-    with col3:
-        st.metric(
-            "Click rate",
-            format_rate(click_rate),
-            f"{format_number(total_clicks)} geklikt"
-        )
-
-    with col4:
-        st.metric(
-            "Click-to-open",
-            format_rate(click_to_open)
-        )
-
-    with col5:
-        st.metric(
-            "Bounce rate",
-            format_rate(bounce_rate),
-            f"{format_number(total_bounces)} bounced"
-        )
-
-    with col6:
-        st.metric(
-            "Uitschrijvingen",
-            format_number(total_unsubs)
-        )
-
-
-def render_chart(df: pd.DataFrame) -> None:
-
-    if len(df) <= 1:
-        return
+if len(filtered_df) > 1:
 
     st.subheader("Click rate trend")
 
     chart_data = (
-        df.dropna(subset=["date"])
+        filtered_df
+        .dropna(subset=["date"])
         .sort_values("date")
         .copy()
     )
@@ -364,39 +515,3 @@ def render_chart(df: pd.DataFrame) -> None:
         fig,
         use_container_width=True
     )
-
-
-def main() -> None:
-
-    st.markdown(
-        STYLE,
-        unsafe_allow_html=True
-    )
-
-    render_header()
-
-    df = load_data()
-
-    if df.empty:
-        st.error("Geen data gevonden.")
-        return
-
-    filtered_df = get_campaign_filter(df)
-
-    if filtered_df.empty:
-        st.warning(
-            "Geen data beschikbaar voor de geselecteerde campagne."
-        )
-        return
-
-    st.divider()
-
-    render_kpis(filtered_df)
-
-    st.divider()
-
-    render_chart(filtered_df)
-
-
-if __name__ == "__main__":
-    main()
