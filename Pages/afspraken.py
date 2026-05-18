@@ -29,7 +29,7 @@ with st.sidebar:
     )
 
     st.page_link(
-        "pages/Social_Media.py",
+        "pages/social-media.py",
         label="Social Media",
         icon="📱"
     )
@@ -41,7 +41,7 @@ with st.sidebar:
     )
 
     st.page_link(
-        "pages/Members.py",
+        "pages/members.py",
         label="Members",
         icon="👥"
     )
