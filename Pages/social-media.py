@@ -17,73 +17,6 @@ st.set_page_config(
 )
 
 # =========================
-# SIDEBAR
-# =========================
-
-with st.sidebar:
-
-    st.markdown("""
-    <div style="padding-bottom:25px;">
-        <h1 style="
-            color:white;
-            font-size:28px;
-            font-weight:800;
-            margin:0;
-        ">
-            VDK Dashboard
-        </h1>
-
-        <p style="
-            color:rgba(255,255,255,0.7);
-            margin-top:8px;
-            font-size:14px;
-        ">
-            Marketing & E-commerce
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.page_link(
-        "main.py",
-        label="main",
-        icon="🏠"
-    )
-
-    st.page_link(
-        "pages/social-media.py",
-        label="Social Media",
-        icon="📱"
-    )
-
-    st.page_link(
-        "pages/Nieuwsbrief.py",
-        label="Nieuwsbrieven",
-        icon="✉️"
-    )
-
-    st.page_link(
-        "pages/members.py",
-        label="Members",
-        icon="👥"
-    )
-
-# =========================
-# GOOGLE SHEETS
-# =========================
-
-SHEET_ID = "1L-KVqx5Bg5Y18PiqncQLggX3oKpeMHtqmRnsmJ5Qziw"
-
-INSTAGRAM_GID = "0"
-FACEBOOK_GID = "847206611"
-FOLLOWERS_GID = "730161295"
-
-def get_sheet_url(gid: str) -> str:
-    return (
-        f"https://docs.google.com/spreadsheets/d/"
-        f"{SHEET_ID}/export?format=csv&gid={gid}"
-    )
-
-# =========================
 # STYLING
 # =========================
 
@@ -109,6 +42,8 @@ html, body, [data-testid="stAppViewContainer"]{
     max-width:100%;
 }
 
+/* SIDEBAR */
+
 section[data-testid="stSidebar"]{
     background:#084422;
     border-right:none;
@@ -118,11 +53,14 @@ section[data-testid="stSidebar"] *{
     color:white !important;
 }
 
+/* MENU */
+
 #MainMenu,
-footer,
-header{
+footer{
     visibility:hidden;
 }
+
+/* TITLES */
 
 .vdk-main-title{
     font-size:54px;
@@ -145,6 +83,8 @@ header{
     margin-top:30px;
     margin-bottom:50px;
 }
+
+/* KPI */
 
 .kpi-wrapper{
     background:#ffffff;
@@ -173,14 +113,21 @@ header{
     font-weight:700;
 }
 
+/* TABLE */
+
 [data-testid="stDataFrame"]{
     border-radius:24px !important;
     overflow:hidden;
 }
 
+/* CHART */
+
 div[data-testid="stPlotlyChart"]{
     border-radius:24px !important;
     overflow:hidden;
+    background:white;
+    padding:15px;
+    box-shadow:0 10px 25px rgba(8,68,34,0.05);
 }
 
 .space{
@@ -191,6 +138,23 @@ div[data-testid="stPlotlyChart"]{
 """
 
 st.markdown(STYLE, unsafe_allow_html=True)
+
+# =========================
+# GOOGLE SHEETS
+# =========================
+
+SHEET_ID = "1L-KVqx5Bg5Y18PiqncQLggX3oKpeMHtqmRnsmJ5Qziw"
+
+INSTAGRAM_GID = "0"
+FACEBOOK_GID = "847206611"
+FOLLOWERS_GID = "730161295"
+
+def get_sheet_url(gid):
+
+    return (
+        f"https://docs.google.com/spreadsheets/d/"
+        f"{SHEET_ID}/export?format=csv&gid={gid}"
+    )
 
 # =========================
 # HELPERS
@@ -223,34 +187,42 @@ def normalize_columns(df):
 
     return df
 
-def calculate_engagement_from_columns(df):
+def calculate_engagement(df):
 
-    if all(col in df.columns for col in [
+    required = [
         "likes",
         "comments",
         "shares",
         "saves",
         "views"
-    ]):
+    ]
 
-        engagement = (
-            (
-                df["likes"]
-                + df["comments"]
-                + df["shares"]
-                + df["saves"]
-            )
-            / df["views"].replace(0, pd.NA)
-        ) * 100
+    if not all(col in df.columns for col in required):
 
-        return (
-            engagement
-            .fillna(0)
-            .replace([float("inf"), -float("inf")], 0)
-            .round(1)
+        return pd.Series(
+            0,
+            index=df.index
         )
 
-    return pd.Series(0, index=df.index)
+    engagement = (
+        (
+            df["likes"]
+            + df["comments"]
+            + df["shares"]
+            + df["saves"]
+        )
+        / df["views"].replace(0, pd.NA)
+    ) * 100
+
+    return (
+        engagement
+        .fillna(0)
+        .replace(
+            [float("inf"), -float("inf")],
+            0
+        )
+        .round(1)
+    )
 
 def fetch_sheet(sheet_gid):
 
@@ -271,7 +243,9 @@ def fetch_sheet(sheet_gid):
 
     response.encoding = "utf-8"
 
-    df = pd.read_csv(io.StringIO(response.text))
+    df = pd.read_csv(
+        io.StringIO(response.text)
+    )
 
     return normalize_columns(df)
 
@@ -311,7 +285,7 @@ def clean_posts_data(df):
             errors="coerce"
         )
 
-    df["engagement"] = calculate_engagement_from_columns(df)
+    df["engagement"] = calculate_engagement(df)
 
     return df
 
@@ -356,16 +330,24 @@ def clean_followers_data(df):
 # LOAD DATA
 # =========================
 
-@st.cache_data(ttl=0)
+@st.cache_data(ttl=300)
 def load_data():
 
-    instagram_df = fetch_sheet(INSTAGRAM_GID)
+    instagram_df = fetch_sheet(
+        INSTAGRAM_GID
+    )
+
     instagram_df["channel"] = "Instagram"
 
-    facebook_df = fetch_sheet(FACEBOOK_GID)
+    facebook_df = fetch_sheet(
+        FACEBOOK_GID
+    )
+
     facebook_df["channel"] = "Facebook"
 
-    followers_df = fetch_sheet(FOLLOWERS_GID)
+    followers_df = fetch_sheet(
+        FOLLOWERS_GID
+    )
 
     combined_posts = pd.concat(
         [instagram_df, facebook_df],
@@ -383,7 +365,7 @@ posts_df, followers_df = load_data()
 # HEADER
 # =========================
 
-h1, h2, h3 = st.columns([2,2,1])
+h1, h2, h3 = st.columns([2, 2, 1])
 
 with h1:
 
@@ -410,11 +392,19 @@ st.markdown(
 
 k1, k2, k3 = st.columns(3)
 
-insta_current = followers_df["instagram_followers"].iloc[-1]
-insta_previous = followers_df["instagram_followers"].iloc[-2]
+insta_current = 0
+insta_previous = 0
 
-facebook_current = followers_df["facebook_followers"].iloc[-1]
-facebook_previous = followers_df["facebook_followers"].iloc[-2]
+facebook_current = 0
+facebook_previous = 0
+
+if len(followers_df) >= 2:
+
+    insta_current = followers_df["instagram_followers"].iloc[-1]
+    insta_previous = followers_df["instagram_followers"].iloc[-2]
+
+    facebook_current = followers_df["facebook_followers"].iloc[-1]
+    facebook_previous = followers_df["facebook_followers"].iloc[-2]
 
 insta_growth = (
     ((insta_current - insta_previous) / insta_previous) * 100
@@ -429,12 +419,21 @@ facebook_growth = (
 avg_engagement = round(
     posts_df["engagement"].mean(),
     1
-)
+) if not posts_df.empty else 0
 
 with k1:
 
-    insta_color = "#58a55c" if insta_growth >= 0 else "#d64545"
-    insta_arrow = "↑" if insta_growth >= 0 else "↓"
+    insta_color = (
+        "#58a55c"
+        if insta_growth >= 0
+        else "#d64545"
+    )
+
+    insta_arrow = (
+        "↑"
+        if insta_growth >= 0
+        else "↓"
+    )
 
     st.markdown(f"""
     <div class="kpi-wrapper">
@@ -448,8 +447,17 @@ with k1:
 
 with k2:
 
-    facebook_color = "#58a55c" if facebook_growth >= 0 else "#d64545"
-    facebook_arrow = "↑" if facebook_growth >= 0 else "↓"
+    facebook_color = (
+        "#58a55c"
+        if facebook_growth >= 0
+        else "#d64545"
+    )
+
+    facebook_arrow = (
+        "↑"
+        if facebook_growth >= 0
+        else "↓"
+    )
 
     st.markdown(f"""
     <div class="kpi-wrapper">
@@ -470,37 +478,51 @@ with k3:
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown('<div class="space"></div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="space"></div>',
+    unsafe_allow_html=True
+)
 
 # =========================
 # CHART
 # =========================
 
-trend = (
-    posts_df.groupby(["date", "channel"])["views"]
-    .sum()
-    .reset_index()
+if not posts_df.empty:
+
+    trend = (
+        posts_df
+        .groupby(["date", "channel"])["views"]
+        .sum()
+        .reset_index()
+    )
+
+    fig = px.line(
+        trend,
+        x="date",
+        y="views",
+        color="channel",
+        markers=True,
+        title="Views trend"
+    )
+
+    fig.update_layout(
+        height=420,
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        legend_title="Kanaal",
+        xaxis_title="Datum",
+        yaxis_title="Views"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+st.markdown(
+    '<div class="space"></div>',
+    unsafe_allow_html=True
 )
-
-fig = px.line(
-    trend,
-    x="date",
-    y="views",
-    color="channel",
-    markers=True,
-    title="Views trend"
-)
-
-fig.update_layout(
-    height=420,
-    paper_bgcolor="#ffffff",
-    plot_bgcolor="#ffffff",
-    border_radius=24
-)
-
-st.plotly_chart(fig, width="stretch")
-
-st.markdown('<div class="space"></div>', unsafe_allow_html=True)
 
 # =========================
 # TABLE
@@ -508,6 +530,7 @@ st.markdown('<div class="space"></div>', unsafe_allow_html=True)
 
 cols = [
     "topic",
+    "channel",
     "likes",
     "views",
     "comments",
@@ -516,9 +539,14 @@ cols = [
     "engagement"
 ]
 
+available_cols = [
+    c for c in cols
+    if c in posts_df.columns
+]
+
 st.dataframe(
-    posts_df[[c for c in cols if c in posts_df.columns]],
-    width="stretch",
+    posts_df[available_cols],
+    use_container_width=True,
     hide_index=True,
     height=450
 )
