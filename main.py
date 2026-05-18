@@ -38,7 +38,7 @@ with st.sidebar:
     )
 
     st.page_link(
-        "pages/Members.py",
+        "pages/members.py",
         label="Members",
         icon="👥"
     )
