@@ -42,25 +42,18 @@ html, body, [data-testid="stAppViewContainer"]{
     max-width:100%;
 }
 
-/* SIDEBAR */
-
-section[data-testid="stSidebar"]{
-    background:#084422;
-    border-right:none;
-}
-
-section[data-testid="stSidebar"] *{
-    color:white !important;
-}
-
-/* MENU */
-
 #MainMenu,
 footer{
     visibility:hidden;
 }
 
-/* TITLES */
+section[data-testid="stSidebar"]{
+    background:#084422;
+}
+
+section[data-testid="stSidebar"] *{
+    color:white !important;
+}
 
 .vdk-main-title{
     font-size:54px;
@@ -83,8 +76,6 @@ footer{
     margin-top:30px;
     margin-bottom:50px;
 }
-
-/* KPI */
 
 .kpi-wrapper{
     background:#ffffff;
@@ -113,14 +104,10 @@ footer{
     font-weight:700;
 }
 
-/* TABLE */
-
 [data-testid="stDataFrame"]{
     border-radius:24px !important;
     overflow:hidden;
 }
-
-/* CHART */
 
 div[data-testid="stPlotlyChart"]{
     border-radius:24px !important;
@@ -140,6 +127,29 @@ div[data-testid="stPlotlyChart"]{
 st.markdown(STYLE, unsafe_allow_html=True)
 
 # =========================
+# SIDEBAR NAVIGATION
+# =========================
+
+with st.sidebar:
+
+    st.markdown("## 📊 VDK Marketing")
+
+    if st.button("🏠 Home", use_container_width=True):
+        st.switch_page("main.py")
+
+    if st.button("📱 Social Media", use_container_width=True):
+        st.rerun()
+
+    if st.button("👥 Members", use_container_width=True):
+        st.switch_page("pages/members.py")
+
+    if st.button("✉️ Nieuwsbrief", use_container_width=True):
+        st.switch_page("pages/nieuwsbrief.py")
+
+    if st.button("📅 Afspraken", use_container_width=True):
+        st.switch_page("pages/afspraken.py")
+
+# =========================
 # GOOGLE SHEETS
 # =========================
 
@@ -149,6 +159,10 @@ INSTAGRAM_GID = "0"
 FACEBOOK_GID = "847206611"
 FOLLOWERS_GID = "730161295"
 
+# =========================
+# HELPERS
+# =========================
+
 def get_sheet_url(gid):
 
     return (
@@ -156,26 +170,7 @@ def get_sheet_url(gid):
         f"{SHEET_ID}/export?format=csv&gid={gid}"
     )
 
-# =========================
-# HELPERS
-# =========================
-
-NUMERIC_COLUMNS = [
-    "likes",
-    "views",
-    "comments",
-    "shares",
-    "saves",
-]
-
-FOLLOWER_COLUMNS = [
-    "instagram_followers",
-    "facebook_followers",
-]
-
 def normalize_columns(df):
-
-    df = df.copy()
 
     df.columns = (
         df.columns
@@ -187,144 +182,26 @@ def normalize_columns(df):
 
     return df
 
-def calculate_engagement(df):
+def fetch_sheet(gid):
 
-    required = [
-        "likes",
-        "comments",
-        "shares",
-        "saves",
-        "views"
-    ]
+    try:
 
-    if not all(col in df.columns for col in required):
-
-        return pd.Series(
-            0,
-            index=df.index
+        response = requests.get(
+            get_sheet_url(gid),
+            timeout=20
         )
 
-    engagement = (
-        (
-            df["likes"]
-            + df["comments"]
-            + df["shares"]
-            + df["saves"]
-        )
-        / df["views"].replace(0, pd.NA)
-    ) * 100
+        response.raise_for_status()
 
-    return (
-        engagement
-        .fillna(0)
-        .replace(
-            [float("inf"), -float("inf")],
-            0
-        )
-        .round(1)
-    )
-
-def fetch_sheet(sheet_gid):
-
-    url = get_sheet_url(sheet_gid)
-
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "text/csv, */*;q=0.1",
-    }
-
-    response = requests.get(
-        url,
-        headers=headers,
-        timeout=20
-    )
-
-    response.raise_for_status()
-
-    response.encoding = "utf-8"
-
-    df = pd.read_csv(
-        io.StringIO(response.text)
-    )
-
-    return normalize_columns(df)
-
-# =========================
-# CLEAN POSTS
-# =========================
-
-def clean_posts_data(df):
-
-    if df.empty:
-        return df
-
-    df = df.copy()
-
-    for col in NUMERIC_COLUMNS:
-
-        if col in df.columns:
-
-            df[col] = (
-                df[col]
-                .astype(str)
-                .str.replace(",", ".", regex=False)
-                .str.replace("%", "", regex=False)
-                .str.strip()
-            )
-
-            df[col] = pd.to_numeric(
-                df[col],
-                errors="coerce"
-            ).fillna(0)
-
-    if "date" in df.columns:
-
-        df["date"] = pd.to_datetime(
-            df["date"],
-            format="%Y-%m-%d",
-            errors="coerce"
+        df = pd.read_csv(
+            io.StringIO(response.text)
         )
 
-    df["engagement"] = calculate_engagement(df)
+        return normalize_columns(df)
 
-    return df
+    except:
 
-# =========================
-# CLEAN FOLLOWERS
-# =========================
-
-def clean_followers_data(df):
-
-    if df.empty:
-        return df
-
-    df = df.copy()
-
-    if "date" in df.columns:
-
-        df["date"] = pd.to_datetime(
-            df["date"],
-            format="%Y-%m-%d",
-            errors="coerce"
-        )
-
-    for col in FOLLOWER_COLUMNS:
-
-        if col in df.columns:
-
-            df[col] = pd.to_numeric(
-                df[col],
-                errors="coerce"
-            ).fillna(0)
-
-    df = (
-        df
-        .dropna(subset=["date"])
-        .sort_values("date")
-        .reset_index(drop=True)
-    )
-
-    return df
+        return pd.DataFrame()
 
 # =========================
 # LOAD DATA
@@ -333,31 +210,94 @@ def clean_followers_data(df):
 @st.cache_data(ttl=300)
 def load_data():
 
-    instagram_df = fetch_sheet(
-        INSTAGRAM_GID
-    )
+    instagram = fetch_sheet(INSTAGRAM_GID)
+    facebook = fetch_sheet(FACEBOOK_GID)
+    followers = fetch_sheet(FOLLOWERS_GID)
 
-    instagram_df["channel"] = "Instagram"
+    if not instagram.empty:
+        instagram["channel"] = "Instagram"
 
-    facebook_df = fetch_sheet(
-        FACEBOOK_GID
-    )
+    if not facebook.empty:
+        facebook["channel"] = "Facebook"
 
-    facebook_df["channel"] = "Facebook"
-
-    followers_df = fetch_sheet(
-        FOLLOWERS_GID
-    )
-
-    combined_posts = pd.concat(
-        [instagram_df, facebook_df],
+    posts = pd.concat(
+        [instagram, facebook],
         ignore_index=True
     )
 
-    return (
-        clean_posts_data(combined_posts),
-        clean_followers_data(followers_df)
-    )
+    numeric_cols = [
+        "likes",
+        "views",
+        "comments",
+        "shares",
+        "saves"
+    ]
+
+    for col in numeric_cols:
+
+        if col in posts.columns:
+
+            posts[col] = pd.to_numeric(
+                posts[col],
+                errors="coerce"
+            ).fillna(0)
+
+    if "date" in posts.columns:
+
+        posts["date"] = pd.to_datetime(
+            posts["date"],
+            errors="coerce"
+        )
+
+    if all(
+        col in posts.columns
+        for col in ["likes", "comments", "shares", "saves", "views"]
+    ):
+
+        posts["engagement"] = (
+            (
+                posts["likes"]
+                + posts["comments"]
+                + posts["shares"]
+                + posts["saves"]
+            )
+            / posts["views"].replace(0, pd.NA)
+        ) * 100
+
+        posts["engagement"] = (
+            posts["engagement"]
+            .fillna(0)
+            .round(1)
+        )
+
+    else:
+
+        posts["engagement"] = 0
+
+    if not followers.empty:
+
+        if "date" in followers.columns:
+
+            followers["date"] = pd.to_datetime(
+                followers["date"],
+                errors="coerce"
+            )
+
+        for col in [
+            "instagram_followers",
+            "facebook_followers"
+        ]:
+
+            if col in followers.columns:
+
+                followers[col] = pd.to_numeric(
+                    followers[col],
+                    errors="coerce"
+                ).fillna(0)
+
+        followers = followers.sort_values("date")
+
+    return posts, followers
 
 posts_df, followers_df = load_data()
 
@@ -365,16 +305,16 @@ posts_df, followers_df = load_data()
 # HEADER
 # =========================
 
-h1, h2, h3 = st.columns([2, 2, 1])
+col1, col2 = st.columns([5,1])
 
-with h1:
+with col1:
 
     st.markdown(
         '<div class="vdk-main-title">Social Media</div>',
         unsafe_allow_html=True
     )
 
-with h3:
+with col2:
 
     st.markdown(
         f'<div class="vdk-date">{datetime.now().strftime("%d %B %Y")}</div>',
@@ -389,8 +329,6 @@ st.markdown(
 # =========================
 # KPI'S
 # =========================
-
-k1, k2, k3 = st.columns(3)
 
 insta_current = 0
 insta_previous = 0
@@ -421,50 +359,34 @@ avg_engagement = round(
     1
 ) if not posts_df.empty else 0
 
+k1, k2, k3 = st.columns(3)
+
 with k1:
 
-    insta_color = (
-        "#58a55c"
-        if insta_growth >= 0
-        else "#d64545"
-    )
-
-    insta_arrow = (
-        "↑"
-        if insta_growth >= 0
-        else "↓"
-    )
+    color = "#58a55c" if insta_growth >= 0 else "#d64545"
+    arrow = "↑" if insta_growth >= 0 else "↓"
 
     st.markdown(f"""
     <div class="kpi-wrapper">
         <div class="kpi-label">Volgers Instagram</div>
         <div class="kpi-value">{int(insta_current):,}</div>
-        <div class="kpi-growth" style="color:{insta_color};">
-            {insta_arrow} {abs(insta_growth):.1f}%
+        <div class="kpi-growth" style="color:{color};">
+            {arrow} {abs(insta_growth):.1f}%
         </div>
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
 
 with k2:
 
-    facebook_color = (
-        "#58a55c"
-        if facebook_growth >= 0
-        else "#d64545"
-    )
-
-    facebook_arrow = (
-        "↑"
-        if facebook_growth >= 0
-        else "↓"
-    )
+    color = "#58a55c" if facebook_growth >= 0 else "#d64545"
+    arrow = "↑" if facebook_growth >= 0 else "↓"
 
     st.markdown(f"""
     <div class="kpi-wrapper">
         <div class="kpi-label">Volgers Facebook</div>
         <div class="kpi-value">{int(facebook_current):,}</div>
-        <div class="kpi-growth" style="color:{facebook_color};">
-            {facebook_arrow} {abs(facebook_growth):.1f}%
+        <div class="kpi-growth" style="color:{color};">
+            {arrow} {abs(facebook_growth):.1f}%
         </div>
     </div>
     """.replace(",", "."), unsafe_allow_html=True)
@@ -474,20 +396,17 @@ with k3:
     st.markdown(f"""
     <div class="kpi-wrapper">
         <div class="kpi-label">Gem. Engagement</div>
-        <div class="kpi-value">{str(avg_engagement).replace('.', ',')}%</div>
+        <div class="kpi-value">{avg_engagement}%</div>
     </div>
     """, unsafe_allow_html=True)
-
-st.markdown(
-    '<div class="space"></div>',
-    unsafe_allow_html=True
-)
 
 # =========================
 # CHART
 # =========================
 
-if not posts_df.empty:
+st.markdown('<div class="space"></div>', unsafe_allow_html=True)
+
+if not posts_df.empty and "date" in posts_df.columns:
 
     trend = (
         posts_df
@@ -501,15 +420,13 @@ if not posts_df.empty:
         x="date",
         y="views",
         color="channel",
-        markers=True,
-        title="Views trend"
+        markers=True
     )
 
     fig.update_layout(
         height=420,
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
-        legend_title="Kanaal",
         xaxis_title="Datum",
         yaxis_title="Views"
     )
@@ -519,14 +436,11 @@ if not posts_df.empty:
         use_container_width=True
     )
 
-st.markdown(
-    '<div class="space"></div>',
-    unsafe_allow_html=True
-)
-
 # =========================
 # TABLE
 # =========================
+
+st.markdown('<div class="space"></div>', unsafe_allow_html=True)
 
 cols = [
     "topic",
@@ -544,9 +458,11 @@ available_cols = [
     if c in posts_df.columns
 ]
 
-st.dataframe(
-    posts_df[available_cols],
-    use_container_width=True,
-    hide_index=True,
-    height=450
-)
+if available_cols:
+
+    st.dataframe(
+        posts_df[available_cols],
+        use_container_width=True,
+        hide_index=True,
+        height=500
+    )
