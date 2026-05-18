@@ -15,38 +15,6 @@ st.set_page_config(
 )
 
 # =====================================================
-# SIDEBAR
-# =====================================================
-
-with st.sidebar:
-
-    st.markdown("## Dashboard")
-
-    st.page_link(
-        "main.py",
-        label="main",
-        icon="🏠"
-    )
-
-    st.page_link(
-        "pages/social-media.py",
-        label="Social Media",
-        icon="📱"
-    )
-
-    st.page_link(
-        "pages/Nieuwsbrief.py",
-        label="Nieuwsbrieven",
-        icon="✉️"
-    )
-
-    st.page_link(
-        "pages/members.py",
-        label="Members",
-        icon="👥"
-    )
-
-# =====================================================
 # STYLING
 # =====================================================
 
@@ -146,6 +114,26 @@ div[data-testid="stPlotlyChart"]{
 st.markdown(STYLE, unsafe_allow_html=True)
 
 # =====================================================
+# HEADER
+# =====================================================
+
+col1, col2, col3 = st.columns([2, 2, 1])
+
+with col1:
+
+    st.markdown(
+        '<div class="dashboard-title">Nieuwsbrief</div>',
+        unsafe_allow_html=True
+    )
+
+with col3:
+
+    st.markdown(
+        f'<div class="dashboard-date">{datetime.now().strftime("%d %B %Y")}</div>',
+        unsafe_allow_html=True
+    )
+
+# =====================================================
 # DATA
 # =====================================================
 
@@ -171,7 +159,7 @@ NUMERIC_COLUMNS = [
 # =====================================================
 
 @st.cache_data(ttl=600)
-def load_data() -> pd.DataFrame:
+def load_data():
 
     try:
 
@@ -233,7 +221,7 @@ def load_data() -> pd.DataFrame:
 # HELPERS
 # =====================================================
 
-def format_number(value) -> str:
+def format_number(value):
 
     if pd.isna(value):
         return "0"
@@ -241,32 +229,12 @@ def format_number(value) -> str:
     return f"{int(value):,}".replace(",", ".")
 
 
-def format_rate(value) -> str:
+def format_rate(value):
 
     if value is None or pd.isna(value):
         return "0,0%"
 
     return f"{value:.1f}%".replace(".", ",")
-
-# =====================================================
-# HEADER
-# =====================================================
-
-col1, col2, col3 = st.columns([2, 2, 1])
-
-with col1:
-
-    st.markdown(
-        '<div class="dashboard-title">Nieuwsbrief</div>',
-        unsafe_allow_html=True
-    )
-
-with col3:
-
-    st.markdown(
-        f'<div class="dashboard-date">{datetime.now().strftime("%d %B %Y")}</div>',
-        unsafe_allow_html=True
-    )
 
 # =====================================================
 # LOAD DATAFRAME
