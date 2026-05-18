@@ -25,27 +25,6 @@ with st.sidebar:
 
     st.markdown("## Dashboard")
 
-with st.sidebar:
-    st.markdown("## Dashboard")
-
-    st.page_link(
-        "pages/Nieuwsbrief.py",
-        label="Nieuwsbrieven",
-        icon="✉️"
-    )
-
-    st.page_link(
-        "pages/members.py",
-        label="Members",
-        icon="👥"
-    )
-
-    st.page_link(
-        "pages/afspraken.py",
-        label="Afspraken",
-        icon="📅"
-    )
-
 # =====================================================
 # STYLING
 # =====================================================
@@ -345,19 +324,17 @@ col1, col2 = st.columns(2, gap="large")
 
 with col1:
 
-    if st.button(
+    st.button(
         "📱 Social media\n\nInstagram, Facebook en engagement prestaties",
         use_container_width=True
-    ):
-        st.switch_page("pages/social-media.py")
+    )
 
 with col2:
 
-    if st.button(
+    st.button(
         "👥 Members\n\nGroei, activatie en omzet prestaties",
         use_container_width=True
-    ):
-        st.switch_page("pages/members.py")
+    )
 
 st.write("")
 
@@ -365,19 +342,17 @@ col3, col4 = st.columns(2, gap="large")
 
 with col3:
 
-    if st.button(
+    st.button(
         "✉️ Nieuwsbrief\n\nOpen rates, clicks en campagnes",
         use_container_width=True
-    ):
-        st.switch_page("pages/Nieuwsbrief.py")
+    )
 
 with col4:
 
-    if st.button(
+    st.button(
         "📅 Afspraken\n\nPlanning, afspraken en analyses",
         use_container_width=True
-    ):
-        st.switch_page("pages/afspraken.py")
+    )
 
 st.write("")
 st.write("")
