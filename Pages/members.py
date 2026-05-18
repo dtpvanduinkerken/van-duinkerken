@@ -1,9 +1,14 @@
 import streamlit as st
-import pandas as pd
-import plotly.express as px
-import requests
-import io
-from datetime import datetime
+
+st.set_page_config(layout="wide")
+
+with st.sidebar:
+    st.markdown("## Dashboard")
+
+    st.page_link("Home.py", label="Home", icon="🏠")
+    st.page_link("pages/Social_Media.py", label="Social Media", icon="📱")
+    st.page_link("pages/Nieuwsbrief.py", label="Nieuwsbrieven", icon="✉️")
+    st.page_link("pages/Members.py", label="Members", icon="👥")
 
 st.set_page_config(page_title="Members", layout="wide")
 
