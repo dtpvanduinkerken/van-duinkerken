@@ -53,11 +53,20 @@ with st.sidebar:
     # Main Dashboards
     st.markdown('<div class="sidebar-title">Dashboards</div>', unsafe_allow_html=True)
     
-    st.button("🏠 Home", use_container_width=True, key="nav_home")
-    st.button("📱 Social Media", use_container_width=True, key="nav_social")
-    st.button("👥 Members", use_container_width=True, key="nav_members")
-    st.button("✉️ Nieuwsbrief", use_container_width=True, key="nav_newsletter")
-    st.button("📅 Afspraken", use_container_width=True, key="nav_events")
+    if st.button("🏠 Home", use_container_width=True, key="nav_home"):
+        st.switch_page("pages/main.py")
+    
+    if st.button("📱 Social Media", use_container_width=True, key="nav_social"):
+        st.switch_page("pages/social-media.py")
+    
+    if st.button("👥 Members", use_container_width=True, key="nav_members"):
+        st.switch_page("pages/members.py")
+    
+    if st.button("✉️ Nieuwsbrief", use_container_width=True, key="nav_newsletter"):
+        st.switch_page("pages/Nieuwsbrief.py")
+    
+    if st.button("📅 Afspraken", use_container_width=True, key="nav_events"):
+        st.switch_page("pages/afspraken.py")
     
     st.write("")
     st.divider()
@@ -765,36 +774,40 @@ st.write("")
 col1, col2 = st.columns(2, gap="large")
 
 with col1:
-    st.button(
+    if st.button(
         "📱 Social Media\n\nInstagram • Facebook\nVolgers • Engagement • Posts",
         use_container_width=True,
         key="btn_social"
-    )
+    ):
+        st.switch_page("pages/social.py")
 
 with col2:
-    st.button(
+    if st.button(
         "👥 Members\n\nLidmaatschappen • Groei\nActivatie • Omzet • Trends",
         use_container_width=True,
         key="btn_members"
-    )
+    ):
+        st.switch_page("pages/members.py")
 
 st.write("")
 
 col3, col4 = st.columns(2, gap="large")
 
 with col3:
-    st.button(
+    if st.button(
         "✉️ Nieuwsbrief\n\nCampagnes • Open rates\nClicks • Bounces • Unsubscribes",
         use_container_width=True,
         key="btn_newsletter"
-    )
+    ):
+        st.switch_page("pages/newsletter.py")
 
 with col4:
-    st.button(
+    if st.button(
         "📅 Afspraken\n\nPlanning • Kalender\nEvents • Analyses • Rapportages",
         use_container_width=True,
         key="btn_events"
-    )
+    ):
+        st.switch_page("pages/events.py")
 
 # =====================================================
 # FOLLOWER GRAPH SECTION
