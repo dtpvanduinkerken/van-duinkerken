@@ -26,7 +26,7 @@ with st.sidebar:
     st.markdown("## Dashboard")
 
     st.page_link(
-        "pages/Social_Media.py",
+        "pages/social-media.py",
         label="Social Media",
         icon="📱"
     )
