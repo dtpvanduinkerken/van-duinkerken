@@ -15,38 +15,6 @@ st.set_page_config(
 )
 
 # =====================================================
-# SIDEBAR
-# =====================================================
-
-with st.sidebar:
-
-    st.markdown("## Dashboard")
-
-    st.page_link(
-        "main.py",
-        label="main",
-        icon="🏠"
-    )
-
-    st.page_link(
-        "pages/social-media.py",
-        label="Social Media",
-        icon="📱"
-    )
-
-    st.page_link(
-        "pages/Nieuwsbrief.py",
-        label="Nieuwsbrieven",
-        icon="✉️"
-    )
-
-    st.page_link(
-        "pages/members.py",
-        label="Members",
-        icon="👥"
-    )
-
-# =====================================================
 # STYLING
 # =====================================================
 
@@ -378,10 +346,16 @@ with col3:
 
 with col4:
 
+    growth_display = (
+        f"+{growth}%"
+        if growth >= 0
+        else f"{growth}%"
+    )
+
     st.metric(
         "Laatste week",
         f"{latest_week:,}".replace(",", "."),
-        f"{growth}%"
+        growth_display
     )
 
 # =====================================================
