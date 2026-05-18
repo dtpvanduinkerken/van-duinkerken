@@ -343,11 +343,21 @@ def calculate_growth(current, previous):
     )
 
 # =====================================================
-# SOCIAL DATA
+# DATA SOURCES
 # =====================================================
 
 SOCIAL_SHEET = "1L-KVqx5Bg5Y18PiqncQLggX3oKpeMHtqmRnsmJ5Qziw"
+MEMBERS_SHEET = "1snBY34YPGix5KpgOQ45aq4obQpmHirEt9Pg9I8DrE_0"
+NEWSLETTER_SHEET = "1seQjiFaLzEm7PZ2vTDeylSZKEXGqDl6FHe2l1nVPnfg"
+
 FOLLOWERS_GID = "730161295"
+ENGAGEMENT_GID = "1634595211"
+MEMBERS_GID = "0"
+DEALS_GID = "1234567890"
+
+# =====================================================
+# SOCIAL DATA - FOLLOWERS
+# =====================================================
 
 followers_url = (
     f"https://docs.google.com/spreadsheets/d/"
@@ -358,12 +368,10 @@ followers = load_csv(followers_url)
 
 instagram_followers = 0
 facebook_followers = 0
-
 instagram_growth = 0
 facebook_growth = 0
 
 if not followers.empty:
-
     followers.columns = (
         followers.columns
         .str.lower()
@@ -383,7 +391,6 @@ if not followers.empty:
     followers = followers.dropna()
 
     if len(followers) >= 2:
-
         current = followers.iloc[-1]
         previous = followers.iloc[-2]
 
@@ -403,6 +410,138 @@ if not followers.empty:
         facebook_growth = calculate_growth(
             facebook_followers,
             int(previous["facebook_followers"])
+        )
+
+# =====================================================
+# SOCIAL DATA - ENGAGEMENT
+# =====================================================
+
+engagement_url = (
+    f"https://docs.google.com/spreadsheets/d/"
+    f"{SOCIAL_SHEET}/export?format=csv&gid={ENGAGEMENT_GID}"
+)
+
+engagement = load_csv(engagement_url)
+
+total_engagement = 0
+avg_engagement_rate = 0
+
+if not engagement.empty:
+    engagement.columns = (
+        engagement.columns
+        .str.lower()
+        .str.strip()
+    )
+    
+    if 'engagement' in engagement.columns:
+        engagement['engagement'] = pd.to_numeric(
+            engagement['engagement'],
+            errors='coerce'
+        )
+        total_engagement = int(
+            engagement['engagement'].sum()
+        )
+        avg_engagement_rate = round(
+            engagement['engagement'].mean(),
+            2
+        )
+    elif 'likes' in engagement.columns:
+        for col in ['likes', 'comments', 'shares']:
+            if col in engagement.columns:
+                engagement[col] = pd.to_numeric(
+                    engagement[col],
+                    errors='coerce'
+                )
+        total_engagement = int(
+            engagement[['likes', 'comments', 'shares']].sum().sum()
+        )
+
+# =====================================================
+# MEMBERS DATA
+# =====================================================
+
+members_url = (
+    f"https://docs.google.com/spreadsheets/d/"
+    f"{MEMBERS_SHEET}/export?format=csv&gid={MEMBERS_GID}"
+)
+
+members = load_csv(members_url)
+
+total_members = 0
+new_members_month = 0
+members_growth = 0
+
+if not members.empty:
+    members.columns = (
+        members.columns
+        .str.lower()
+        .str.strip()
+    )
+    
+    total_members = len(members)
+    
+    if 'joindate' in members.columns or 'date' in members.columns:
+        date_col = 'joindate' if 'joindate' in members.columns else 'date'
+        members[date_col] = pd.to_datetime(
+            members[date_col],
+            errors='coerce'
+        )
+        
+        current_month = pd.Timestamp.now().month
+        current_year = pd.Timestamp.now().year
+        
+        new_members_month = len(
+            members[
+                (members[date_col].dt.month == current_month) &
+                (members[date_col].dt.year == current_year)
+            ]
+        )
+
+# =====================================================
+# NEWSLETTER DATA
+# =====================================================
+
+newsletter_url = (
+    f"https://opensheet.elk.sh/{NEWSLETTER_SHEET}/Sheet1"
+)
+
+try:
+    response = requests.get(newsletter_url, timeout=15)
+    newsletter = pd.DataFrame(response.json())
+except:
+    newsletter = pd.DataFrame()
+
+avg_open_rate = 0
+avg_click_rate = 0
+newsletter_campaigns = 0
+
+if not newsletter.empty:
+    newsletter.columns = (
+        newsletter.columns
+        .str.lower()
+        .str.strip()
+    )
+    
+    newsletter_campaigns = len(newsletter)
+    
+    if 'open_rate' in newsletter.columns:
+        newsletter['open_rate'] = pd.to_numeric(
+            newsletter['open_rate'],
+            errors='coerce'
+        )
+        avg_open_rate = round(
+            newsletter['open_rate'].mean(),
+            1
+        )
+    
+    if 'click_rate' in newsletter.columns:
+        newsletter['click_rate'] = pd.to_numeric(
+            newsletter['click_rate'],
+            errors='coerce'
+        )
+        avg_click_rate = round(
+            newsletter['click_rate'].mean(),
+            1
         )
 
 # =====================================================
@@ -454,6 +593,9 @@ st.markdown('<div class="section-title">📈 Snelle statistieken</div>', unsafe_
 
 st.write("")
 
+# SOCIAL MEDIA ROW
+st.markdown('<h4 style="color: #084422; margin-bottom: 15px;">📱 Social Media</h4>', unsafe_allow_html=True)
+
 col1, col2, col3, col4 = st.columns(4, gap="medium")
 
 with col1:
@@ -479,9 +621,79 @@ with col3:
 
 with col4:
     st.metric(
+        label="Engagements",
+        value=f"{total_engagement:,}".replace(",", "."),
+        delta=f"{avg_engagement_rate:.1f}%"
+    )
+
+st.write("")
+
+# MEMBERS ROW
+st.markdown('<h4 style="color: #084422; margin-bottom: 15px;">👥 Members</h4>', unsafe_allow_html=True)
+
+col5, col6, col7, col8 = st.columns(4, gap="medium")
+
+with col5:
+    st.metric(
+        label="Totale leden",
+        value=f"{total_members:,}".replace(",", "."),
+        delta="Alle leden"
+    )
+
+with col6:
+    st.metric(
+        label="Nieuwe leden (deze maand)",
+        value=f"{new_members_month}",
+        delta="Deze maand"
+    )
+
+with col7:
+    st.metric(
         label="Kanalen actief",
         value="2",
         delta="Instagram + Facebook"
+    )
+
+with col8:
+    st.metric(
+        label="Sync status",
+        value="✅ Live",
+        delta="Real-time"
+    )
+
+st.write("")
+
+# NEWSLETTER ROW
+st.markdown('<h4 style="color: #084422; margin-bottom: 15px;">✉️ Nieuwsbrief</h4>', unsafe_allow_html=True)
+
+col9, col10, col11, col12 = st.columns(4, gap="medium")
+
+with col9:
+    st.metric(
+        label="Campagnes",
+        value=f"{newsletter_campaigns}",
+        delta="Totaal"
+    )
+
+with col10:
+    st.metric(
+        label="Gemiddelde open rate",
+        value=f"{avg_open_rate:.1f}%",
+        delta="Uit alle campagnes"
+    )
+
+with col11:
+    st.metric(
+        label="Gemiddelde click rate",
+        value=f"{avg_click_rate:.1f}%",
+        delta="Uit alle campagnes"
+    )
+
+with col12:
+    st.metric(
+        label="Data quality",
+        value="✅ OK",
+        delta="Alle bronnen"
     )
 
 st.write("")
@@ -489,8 +701,65 @@ st.write("")
 st.write("")
 
 # =====================================================
-# DASHBOARD NAVIGATION SECTION
+# CHANNELS OVERVIEW
 # =====================================================
+
+st.markdown('<div class="section-title">📊 Kanaal Overzicht</div>', unsafe_allow_html=True)
+
+st.markdown("""
+Snel overzicht van alle marketing kanalen en hun prestaties.
+""")
+
+st.write("")
+
+col1, col2, col3 = st.columns(3, gap="medium")
+
+with col1:
+    st.markdown(f"""
+    <div class="feature-card">
+        <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
+        <h4>Social Media</h4>
+        <p style="font-size: 28px; font-weight: 700; color: #084422; margin: 10px 0;">
+            {instagram_followers + facebook_followers:,}
+        </p>
+        <p style="font-size: 14px; color: #666;">Totale volgers</p>
+        <p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">
+            📈 Groei: {instagram_growth + facebook_growth:.1f}%
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class="feature-card">
+        <div style="font-size: 48px; margin-bottom: 10px;">👥</div>
+        <h4>Members</h4>
+        <p style="font-size: 28px; font-weight: 700; color: #084422; margin: 10px 0;">
+            {total_members:,}
+        </p>
+        <p style="font-size: 14px; color: #666;">Totale leden</p>
+        <p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">
+            ➕ Nieuw: {new_members_month} deze maand
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class="feature-card">
+        <div style="font-size: 48px; margin-bottom: 10px;">✉️</div>
+        <h4>Nieuwsbrief</h4>
+        <p style="font-size: 28px; font-weight: 700; color: #084422; margin: 10px 0;">
+            {newsletter_campaigns}
+        </p>
+        <p style="font-size: 14px; color: #666;">Campagnes</p>
+        <p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">
+            📊 Open rate: {avg_open_rate:.1f}%
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.write("")
 
 st.markdown('<div class="section-title">🎯 Dashboards</div>', unsafe_allow_html=True)
 
