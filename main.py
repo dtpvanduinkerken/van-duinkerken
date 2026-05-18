@@ -118,8 +118,8 @@ with st.sidebar:
     )
 
     st.page_link(
-        "Home.py",
-        label="Home",
+        "main.py",
+        label="main",
         icon="🏠"
     )
 
