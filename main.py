@@ -26,73 +26,59 @@ with st.sidebar:
     st.markdown("""
     <style>
     .sidebar-title {
-        font-size: 24px;
-        font-weight: 700;
-        margin-bottom: 30px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid rgba(255,255,255,0.2);
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+        opacity: 0.95;
     }
-    .nav-item {
-        padding: 12px 16px;
-        margin: 8px 0;
-        border-radius: 10px;
-        text-decoration: none;
-        display: block;
-        transition: 0.2s;
-    }
-    .nav-item:hover {
-        background: rgba(255,255,255,0.1);
+    .nav-section {
+        margin-bottom: 35px;
     }
     </style>
     """, unsafe_allow_html=True)
     
-    st.markdown('<div class="sidebar-title">📊 Dashboards</div>', unsafe_allow_html=True)
-    
-    # Dashboard links
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("🏠 Home", use_container_width=True):
-            st.rerun()
-    
-    with col2:
-        if st.button("📱 Social", use_container_width=True):
-            pass
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("👥 Members", use_container_width=True):
-            pass
-    
-    with col2:
-        if st.button("✉️ Mailbox", use_container_width=True):
-            pass
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("📅 Events", use_container_width=True):
-            pass
-    
-    with col2:
-        if st.button("📊 Reports", use_container_width=True):
-            pass
+    # Logo/Branding
+    st.markdown("""
+    <div style="margin-bottom: 40px; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 8px;">📊</div>
+        <div style="font-size: 16px; font-weight: 600;">VDK Marketing</div>
+        <div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">v1.0</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.divider()
     
-    st.markdown('<div class="sidebar-title">⚙️ Instellingen</div>', unsafe_allow_html=True)
+    # Main Dashboards
+    st.markdown('<div class="sidebar-title">Dashboards</div>', unsafe_allow_html=True)
     
-    if st.button("🔄 Vernieuwen", use_container_width=True):
+    st.button("🏠 Home", use_container_width=True, key="nav_home")
+    st.button("📱 Social Media", use_container_width=True, key="nav_social")
+    st.button("👥 Members", use_container_width=True, key="nav_members")
+    st.button("✉️ Nieuwsbrief", use_container_width=True, key="nav_newsletter")
+    st.button("📅 Afspraken", use_container_width=True, key="nav_events")
+    
+    st.write("")
+    st.divider()
+    st.write("")
+    
+    # Utilities
+    st.markdown('<div class="sidebar-title">Hulpmiddelen</div>', unsafe_allow_html=True)
+    
+    if st.button("🔄 Vernieuwen gegevens", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
     
+    st.write("")
     st.divider()
+    st.write("")
     
+    # Info
     st.markdown("""
-    <div style="font-size: 12px; opacity: 0.7; margin-top: 30px; text-align: center;">
-    <p><strong>VDK Marketing</strong></p>
-    <p>v1.0 • 2026</p>
+    <div style="font-size: 12px; opacity: 0.6; text-align: center; margin-top: 30px;">
+    <p>📦 Gegevens van Google Sheets</p>
+    <p>🔄 Automatisch bijgewerkt</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -131,9 +117,9 @@ footer{
 /* SIDEBAR */
 
 section[data-testid="stSidebar"]{
-    background:linear-gradient(180deg,#084422 0%, #063319 100%);
-    border-right:2px solid rgba(255,255,255,0.1);
-    padding-top:20px;
+    background:linear-gradient(180deg,#084422 0%, #0a5230 100%);
+    border-right:1px solid rgba(255,255,255,0.08);
+    padding-top:30px;
 }
 
 section[data-testid="stSidebar"] * {
@@ -141,16 +127,23 @@ section[data-testid="stSidebar"] * {
 }
 
 section[data-testid="stSidebar"] button {
-    background: rgba(255,255,255,0.1) !important;
+    background: transparent !important;
     color: white !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
-    border-radius: 10px !important;
-    font-weight: 600 !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 12px !important;
+    font-weight: 500 !important;
+    font-size: 15px !important;
+    padding: 12px 16px !important;
+    margin-bottom: 8px !important;
 }
 
 section[data-testid="stSidebar"] button:hover {
-    background: rgba(255,255,255,0.2) !important;
-    border: 1px solid rgba(255,255,255,0.3) !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
+    margin-bottom: 20px;
 }
 
 /* HERO */
