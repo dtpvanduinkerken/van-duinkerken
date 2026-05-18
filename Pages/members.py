@@ -26,7 +26,7 @@ with st.sidebar:
 
     st.page_link(
         "main.py",
-        label="Home",
+        label="main",
         icon="🏠"
     )
 
