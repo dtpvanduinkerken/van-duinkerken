@@ -17,38 +17,6 @@ st.set_page_config(
 )
 
 # =====================================================
-# SIDEBAR
-# =====================================================
-
-with st.sidebar:
-
-    st.markdown("## Dashboard")
-
-    st.page_link(
-        "main.py",
-        label="main",
-        icon="🏠"
-    )
-
-    st.page_link(
-        "pages/social-media.py",
-        label="Social Media",
-        icon="📱"
-    )
-
-    st.page_link(
-        "pages/Nieuwsbrief.py",
-        label="Nieuwsbrieven",
-        icon="✉️"
-    )
-
-    st.page_link(
-        "pages/members.py",
-        label="Members",
-        icon="👥"
-    )
-
-# =====================================================
 # STYLING
 # =====================================================
 
@@ -114,11 +82,16 @@ footer{
 
 /* KPI */
 
-[data-testid="stMetric"]{
+[data-testid="metric-container"]{
     background:#ffffff;
     border-radius:24px;
     padding:20px;
     box-shadow:0 10px 25px rgba(8,68,34,0.05);
+    border:none;
+}
+
+[data-testid="metric-container"] label{
+    color:#8c8c8c !important;
 }
 
 /* GRAPH */
@@ -192,7 +165,7 @@ DEALS_URL = (
 # HELPERS
 # =====================================================
 
-def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+def normalize_columns(df):
 
     if df.empty:
         return df
@@ -208,7 +181,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def fetch_sheet(url: str) -> pd.DataFrame:
+def fetch_sheet(url):
 
     try:
 
@@ -233,10 +206,15 @@ def fetch_sheet(url: str) -> pd.DataFrame:
 
     except Exception as e:
 
-        st.error(f"❌ Kan data niet laden: {e}")
+        st.error(
+            f"❌ Kan data niet laden: {e}"
+        )
 
         return pd.DataFrame()
 
+# =====================================================
+# CACHE
+# =====================================================
 
 @st.cache_data(ttl=3600)
 def load_members():
@@ -276,7 +254,10 @@ if members.empty:
 # PROCESS MEMBERS
 # =====================================================
 
-members["week_label"] = members["created_at"].astype(str)
+members["week_label"] = (
+    members["created_at"]
+    .astype(str)
+)
 
 members["year"] = (
     members["week_label"]
@@ -375,13 +356,15 @@ total_members = int(
     weekly["Nieuwe members"].sum()
 )
 
-latest_growth = int(
-    weekly["Groei"].iloc[-1]
-) if len(weekly) > 0 else 0
-
 total_cumulative = int(
     weekly["Totaal"].iloc[-1]
 ) if len(weekly) > 0 else 0
+
+growth_display = (
+    f"+{groei_percentage:.1f}%"
+    if groei_percentage >= 0
+    else f"{groei_percentage:.1f}%"
+)
 
 col1, col2, col3 = st.columns(3)
 
@@ -389,22 +372,22 @@ with col1:
 
     st.metric(
         "Nieuwe members totaal",
-        f"{total_members:,}"
+        f"{total_members:,}".replace(",", ".")
     )
 
 with col2:
 
     st.metric(
         "Nieuwe members laatste week",
-        f"{huidige_week:,}",
-        delta=f"{groei_percentage:.1f}%"
+        f"{huidige_week:,}".replace(",", "."),
+        delta=growth_display
     )
 
 with col3:
 
     st.metric(
         "Totaal cumulatief",
-        f"{total_cumulative:,}"
+        f"{total_cumulative:,}".replace(",", ".")
     )
 
 st.divider()
@@ -578,12 +561,17 @@ if not deals.empty:
 
             display_df["totale_omzet"] = (
                 display_df["totale_omzet"]
-                .apply(lambda x: f"€{x:,.0f}")
+                .apply(lambda x: f"€{x:,.0f}".replace(",", "."))
             )
 
             display_df["gemiddelde_omzet"] = (
                 display_df["gemiddelde_omzet"]
-                .apply(lambda x: f"€{x:,.0f}")
+                .apply(lambda x: f"€{x:,.0f}".replace(",", "."))
+            )
+
+            display_df["aantal_transacties"] = (
+                display_df["aantal_transacties"]
+                .astype(int)
             )
 
             display_df = display_df.rename(columns={
