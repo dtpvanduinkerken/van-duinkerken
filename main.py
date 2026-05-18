@@ -352,7 +352,7 @@ with col1:
         "📱 Social media\n\nInstagram, Facebook en engagement prestaties",
         use_container_width=True
     ):
-        st.switch_page("pages/Social_Media.py")
+        st.switch_page("pages/social-media.py")
 
 with col2:
 
@@ -360,7 +360,7 @@ with col2:
         "👥 Members\n\nGroei, activatie en omzet prestaties",
         use_container_width=True
     ):
-        st.switch_page("pages/Members.py")
+        st.switch_page("pages/members.py")
 
 st.write("")
 
