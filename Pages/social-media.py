@@ -44,8 +44,8 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     st.page_link(
-        "Home.py",
-        label="Home",
+        "main.py",
+        label="main",
         icon="🏠"
     )
 
